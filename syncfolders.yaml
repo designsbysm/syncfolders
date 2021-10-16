@@ -1,0 +1,15 @@
+timber:
+  cli:
+    level: 9
+    timestamp: "[15:04:05]"
+    flags: 3 #timber.FlagColorful|timber.FlagFileName
+  file:
+    level: -9
+    timestamp: "[15:04:05]"
+    flags: 8 #timber.FlagTitle
+    path: logs/2006/01/2006-01-02.log
+profiles:
+  dev:
+    exclude:
+      - node_modules
+      - test
