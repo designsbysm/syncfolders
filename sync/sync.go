@@ -1,18 +1,15 @@
 package sync
 
 import (
-	"fmt"
-
+	"github.com/designsbysm/timber/v2"
 	"github.com/spf13/viper"
 )
 
 func Go() error {
-	src := viper.GetString("src")
 	dest := viper.GetString("dest")
+	exclude := viper.GetStringSlice("exclude")
+	src := viper.GetString("src")
 
-	name := viper.GetString("profile")
-	key := fmt.Sprintf("profiles.%s", name)
-	exclude := viper.GetStringSlice(fmt.Sprintf("%s.exclude", key))
 
 	srcFiles, err := gatherFiles(src, dest, exclude)
 	if err != nil {
@@ -26,6 +23,8 @@ func Go() error {
 	if err := copyFiles(srcFiles); err != nil {
 		return err
 	}
+
+	timber.Info("files copied:", len(srcFiles))
 
 	return nil
 }

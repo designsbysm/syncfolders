@@ -3,73 +3,55 @@ package sync
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
+
+	"github.com/designsbysm/timber/v2"
 )
 
 func gatherFiles(src string, dest string, exclude []string) (files []File, err error) {
-	// files := []File{}
-
 	err = filepath.Walk(src, func(srcPath string, srcInfo os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
-		//TODO: exclude paths
+		for _, pattern := range exclude {
+			re := regexp.MustCompile(pattern)
+
+			if re.Match([]byte(srcPath)) {
+				timber.Debug("exclude:", srcPath)
+				return nil
+			}
+		}
 
 		if srcInfo.IsDir() {
+			timber.Debug("skip:", srcPath)
 			return nil
 		}
 
 		destPath := strings.Replace(srcPath, src, dest, 1)
-		_, err = os.Stat(destPath)
+		f := File{
+			src:  srcPath,
+			dest: destPath,
+		}
+
 		if err != nil {
 			if !os.IsNotExist(err) {
 				return err
 			}
-			f := File{
-				src:  srcPath,
-				dest: destPath,
-			}
 
 			// dest doesn't exist, always copy
+			timber.Debug("include:", srcPath)
 			files = append(files, f)
+
 			return nil
 		}
 
-		// TODO: compare src & dest
-		// timber.Debug(destPath)
-
-		// timber.Debug(path, info)
-		// match := false
-		// for _, white := range whitelist {
-		// 	if match {
-		// 		continue
-		// 	}
-
-		// 	whiteRE := regexp.MustCompile(white)
-		// 	whiteLocation := whiteRE.FindIndex([]byte(path))
-
-		// 	if len(whiteLocation) > 0 {
-		// 		match = true
-
-		// 		for _, black := range blacklist {
-		// 			blackRE := regexp.MustCompile(black)
-		// 			blackLocation := blackRE.FindIndex([]byte(path))
-
-		// 			if len(blackLocation) > 0 {
-		// 				match = false
-		// 			}
-		// 		}
-		// 	}
-		// }
-
-		// if !match {
-		// 	os.Remove(path)
-		// 	_, err := os.Stat(path)
-		// 	if err != nil {
-		// 		complete = false
-		// 	}
-		// }
+		destInfo, err := os.Stat(destPath)
+		if srcInfo.ModTime().After(destInfo.ModTime()) || srcInfo.Size() != destInfo.Size() {
+			timber.Debug("include:", srcPath)
+			files = append(files, f)
+		}
 
 		return nil
 	})

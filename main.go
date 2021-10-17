@@ -19,5 +19,5 @@ func main() {
 	}
 
 	duration := time.Since(start)
-	timber.Info(duration.Round(time.Millisecond))
+	timber.Info("run time:", duration.Round(time.Millisecond))
 }

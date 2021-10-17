@@ -3,69 +3,47 @@ package sync
 import (
 	"io"
 	"os"
+
+	"github.com/designsbysm/timber/v2"
+	"golang.org/x/sync/errgroup"
 )
 
 func copyFiles(files []File) error {
-	// 	// create a list of folder from the found files
-	// 	folders := mccoy.Set{}
+	wg := make(chan struct{}, 100)
+	eg := new(errgroup.Group)
+
 	for _, file := range files {
-		// io.Copy()
+		file := file
+		wg <- struct{}{}
 
-		// input, err := ioutil.ReadFile(file.src)
-		// if err != nil {
-		// 	return err
-		// }
+		eg.Go(func() error {
+			fin, err := os.Open(file.src)
+			if err != nil {
+				return closeCopy(wg, err)
+			}
+			defer fin.Close()
 
-		// err = ioutil.WriteFile(file.dest, input, 0644)
-		// if err != nil {
-		// 	return err
-		// }
+			fout, err := os.Create(file.dest)
+			if err != nil {
+				return closeCopy(wg, err)
+			}
+			defer fout.Close()
 
-		// src := "words.txt"
-		// dst := "words2.txt"
+			_, err = io.Copy(fout, fin)
+			if err != nil {
+				return closeCopy(wg, err)
+			}
 
-		fin, err := os.Open(file.src)
-		if err != nil {
-			return err
-		}
-		defer fin.Close()
+			timber.Debug("copy:", file.src)
 
-		fout, err := os.Create(file.dest)
-		if err != nil {
-			return err
-		}
-		defer fout.Close()
-
-		_, err = io.Copy(fout, fin)
-
-		if err != nil {
-			return err
-		}
+			return closeCopy(wg, nil)
+		})
 	}
 
-	// 	// remove folders with children, os.MkdirAll() will create an entire path
-	// 	for _, i := range folders.Items() {
-	// 		needle := mccoy.ItemString(i)
+	return eg.Wait()
+}
 
-	// 		for _, ii := range folders.Items() {
-	// 			test := mccoy.ItemString(ii)
-
-	// 			if strings.Contains(test, needle) && test != needle {
-	// 				folders.Delete(i)
-	// 				break
-	// 			}
-	// 		}
-	// 	}
-
-	// 	// make the folder structure
-	// 	for _, i := range folders.Items() {
-	// 		path := mccoy.ItemString(i)
-
-	// 		err := os.MkdirAll(path, 0755)
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 	}
-
-	return nil
+func closeCopy(wg chan struct{}, err error) error {
+	<-wg
+	return err
 }
