@@ -39,5 +39,5 @@ func Set(msg string) {
 
 func print() {
 	Clear()
-	fmt.Fprintf(writer, "%s: %d", title, value)
+	fmt.Fprintf(writer, "%8s: %d", title, value)
 }

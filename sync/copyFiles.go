@@ -25,6 +25,12 @@ func copyFiles(files []File) error {
 			var fout *os.File
 			var err error
 
+			if file.destExist {
+				if err := os.Chmod(file.dest, 0644); err != nil {
+					return closeCopy(wg, err)
+				}
+			}
+
 			if fin, err = os.Open(file.src); err != nil {
 				return closeCopy(wg, err)
 			}
@@ -36,6 +42,10 @@ func copyFiles(files []File) error {
 			defer fout.Close()
 
 			if _, err = io.Copy(fout, fin); err != nil {
+				return closeCopy(wg, err)
+			}
+
+			if err := os.Chmod(file.dest, file.perm); err != nil {
 				return closeCopy(wg, err)
 			}
 

@@ -31,7 +31,7 @@ func gatherFiles(src string, dest string, exclude []string, include []string) (f
 					iRE := regexp.MustCompile(iPattern)
 
 					if iRE.MatchString(f.src) {
-						add, err := includeFile(f)
+						add, err := includeFile(&f)
 						if err != nil {
 							return err
 						} else if add {
@@ -53,7 +53,7 @@ func gatherFiles(src string, dest string, exclude []string, include []string) (f
 			return nil
 		}
 
-		add, err := includeFile(f)
+		add, err := includeFile(&f)
 		if err != nil {
 			return err
 		} else if add {
@@ -68,24 +68,4 @@ func gatherFiles(src string, dest string, exclude []string, include []string) (f
 
 	progress.Finish()
 	return
-}
-
-func includeFile(f File) (bool, error) {
-	destInfo, err := os.Stat(f.dest)
-	if err != nil {
-		if !os.IsNotExist(err) {
-			return false, err
-		}
-
-		return true, nil
-	}
-
-	srcInfo, err := os.Stat(f.src)
-	if err != nil {
-		return false, err
-	} else if srcInfo.ModTime().After(destInfo.ModTime()) || srcInfo.Size() != destInfo.Size() {
-		return true, nil
-	}
-
-	return false, nil
 }

@@ -47,6 +47,17 @@ func removeFiles(src string, dest string) error {
 			timber.Info("orphan:", destPath)
 			progress.Increment()
 
+			fi, err := os.Lstat(destPath)
+			if err != nil {
+				return err
+			}
+
+			if fi.Mode().IsRegular() {
+				if err := os.Chmod(destPath, 0777); err != nil {
+					return err
+				}
+			}
+
 			return os.Remove(destPath)
 		}
 
