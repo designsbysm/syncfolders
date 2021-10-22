@@ -6,27 +6,15 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/designsbysm/syncfolders/progress"
 	"github.com/designsbysm/timber/v2"
 )
 
-func gatherFiles(src string, dest string, exclude []string) (files []File, err error) {
+func gatherFiles(src string, dest string, exclude []string, include []string) (files []File, err error) {
+	progress.Set("Found")
 	err = filepath.Walk(src, func(srcPath string, srcInfo os.FileInfo, err error) error {
 		if err != nil {
 			return err
-		}
-
-		for _, pattern := range exclude {
-			re := regexp.MustCompile(pattern)
-
-			if re.Match([]byte(srcPath)) {
-				timber.Debug("exclude:", srcPath)
-				return nil
-			}
-		}
-
-		if srcInfo.IsDir() {
-			timber.Debug("skip:", srcPath)
-			return nil
 		}
 
 		destPath := strings.Replace(srcPath, src, dest, 1)
@@ -35,26 +23,69 @@ func gatherFiles(src string, dest string, exclude []string) (files []File, err e
 			dest: destPath,
 		}
 
-		if err != nil {
-			if !os.IsNotExist(err) {
-				return err
+		for _, ePattern := range exclude {
+			eRE := regexp.MustCompile(ePattern)
+
+			if eRE.MatchString(f.src) {
+				for _, iPattern := range include {
+					iRE := regexp.MustCompile(iPattern)
+
+					if iRE.MatchString(f.src) {
+						add, err := includeFile(f)
+						if err != nil {
+							return err
+						} else if add {
+							timber.Debug("include:", f.src)
+							files = append(files, f)
+							progress.Increment()
+							return nil
+						}
+					}
+				}
+
+				timber.Debug("exclude:", f.src)
+				return nil
 			}
+		}
 
-			// dest doesn't exist, always copy
-			timber.Debug("include:", srcPath)
-			files = append(files, f)
-
+		if srcInfo.IsDir() || !srcInfo.Mode().IsRegular() {
+			timber.Debug("skip:", f.src)
 			return nil
 		}
 
-		destInfo, err := os.Stat(destPath)
-		if srcInfo.ModTime().After(destInfo.ModTime()) || srcInfo.Size() != destInfo.Size() {
-			timber.Debug("include:", srcPath)
+		add, err := includeFile(f)
+		if err != nil {
+			return err
+		} else if add {
+			timber.Debug("include:", f.src)
 			files = append(files, f)
+			progress.Increment()
+			return nil
 		}
 
 		return nil
 	})
 
+	progress.Finish()
 	return
+}
+
+func includeFile(f File) (bool, error) {
+	destInfo, err := os.Stat(f.dest)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return false, err
+		}
+
+		return true, nil
+	}
+
+	srcInfo, err := os.Stat(f.src)
+	if err != nil {
+		return false, err
+	} else if srcInfo.ModTime().After(destInfo.ModTime()) || srcInfo.Size() != destInfo.Size() {
+		return true, nil
+	}
+
+	return false, nil
 }

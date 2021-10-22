@@ -4,43 +4,49 @@ import (
 	"io"
 	"os"
 
+	"github.com/designsbysm/syncfolders/progress"
 	"github.com/designsbysm/timber/v2"
 	"golang.org/x/sync/errgroup"
 )
 
 func copyFiles(files []File) error {
-	wg := make(chan struct{}, 100)
 	eg := new(errgroup.Group)
+	wg := make(chan struct{}, 10)
+	progress.Set("Copied")
 
 	for _, file := range files {
 		file := file
 		wg <- struct{}{}
+		progress.Increment()
+		timber.Info("copy:", file.src)
 
 		eg.Go(func() error {
-			fin, err := os.Open(file.src)
-			if err != nil {
+			var fin *os.File
+			var fout *os.File
+			var err error
+
+			if fin, err = os.Open(file.src); err != nil {
 				return closeCopy(wg, err)
 			}
 			defer fin.Close()
 
-			fout, err := os.Create(file.dest)
-			if err != nil {
+			if fout, err = os.Create(file.dest); err != nil {
 				return closeCopy(wg, err)
 			}
 			defer fout.Close()
 
-			_, err = io.Copy(fout, fin)
-			if err != nil {
+			if _, err = io.Copy(fout, fin); err != nil {
 				return closeCopy(wg, err)
 			}
-
-			timber.Debug("copy:", file.src)
 
 			return closeCopy(wg, nil)
 		})
 	}
 
-	return eg.Wait()
+	err := eg.Wait()
+	progress.Finish()
+
+	return err
 }
 
 func closeCopy(wg chan struct{}, err error) error {

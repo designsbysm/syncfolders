@@ -2,10 +2,10 @@ module github.com/designsbysm/syncfolders
 
 go 1.17
 
-replace github.com/designsbysm/mccoy => ../../go-modules/mccoy
+replace github.com/designsbysm/mccoy => ../go-modules/mccoy
 
 require (
-	github.com/designsbysm/mccoy v0.0.0-20211016195746-aef2c3f6523f
+	github.com/designsbysm/mccoy v0.0.0-20211018202701-e5495182d695
 	github.com/designsbysm/timber/v2 v2.6.0
 	github.com/spf13/viper v1.9.0
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
@@ -22,7 +22,7 @@ require (
 	github.com/spf13/jwalterweatherman v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.2.0 // indirect
-	golang.org/x/sys v0.0.0-20211015200801-69063c4bb744 // indirect
+	golang.org/x/sys v0.0.0-20211020174200-9d6173849985 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/ini.v1 v1.63.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

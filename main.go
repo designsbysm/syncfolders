@@ -1,10 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/designsbysm/syncfolders/sync"
-	"github.com/designsbysm/timber/v2"
 )
 
 func main() {
@@ -19,5 +19,5 @@ func main() {
 	}
 
 	duration := time.Since(start)
-	timber.Info("run time:", duration.Round(time.Millisecond))
+	fmt.Println("Duration:", duration.Round(time.Millisecond))
 }
