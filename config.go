@@ -11,7 +11,6 @@ import (
 )
 
 func config() error {
-
 	// flags
 	var dest string
 	var exclude string
